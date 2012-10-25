@@ -55,6 +55,10 @@
 " ==========================================================
 set nocompatible              " Don't be compatible with vi
 let mapleader=","             " change the leader to be a comma vs slash
+let g:miniBufExplMapWindowNavVim = 1 
+let g:miniBufExplMapWindowNavArrows = 1 
+let g:miniBufExplMapCTabSwitchBufs = 1 
+let g:miniBufExplModSelTarget = 1 
 
 " Seriously, guys. It's not like :W is bound to anything anyway.
 command! W :w
