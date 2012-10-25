@@ -35,9 +35,6 @@
 " Git
 "    Syntax highlighting for git config files
 "
-" Minibufexpl
-"    Visually display what buffers are currently opened
-"
 " Pydoc
 "    Opens up pydoc within vim
 "
@@ -63,9 +60,22 @@ let g:miniBufExplModSelTarget = 1
 " Seriously, guys. It's not like :W is bound to anything anyway.
 command! W :w
 
+fu! SplitScroll()
+    :wincmd v
+    :wincmd w
+    execute "normal! \<C-d>"
+    :set scrollbind
+    :wincmd w
+    :set scrollbind
+endfu
+
+nmap <leader>sb :call SplitScroll()<CR>
+
+
+"<CR><C-w>l<C-f>:set scrollbind<CR>
+
 " sudo write this
 cmap W! w !sudo tee % >/dev/null
-
 
 " Toggle the tasklist
 map <leader>td <Plug>TaskList
@@ -84,9 +94,7 @@ nmap <silent><Leader>te <Esc>:Pytest error<CR>
 " Run django tests
 map <leader>dt :set makeprg=python\ manage.py\ test\|:call MakeGreen()<CR>
 
-" ,v brings up my .vimrc
-" ,V reloads it -- making all changes active (have to save first)
-map <leader>v :sp ~/.vimrc<CR><C-W>_
+" Reload Vimrc
 map <silent> <leader>V :source ~/.vimrc<CR>:filetype detect<CR>:exe ":echo 'vimrc reloaded'"<CR>
 
 " open/close the quickfix window
@@ -149,24 +157,24 @@ set vb t_vb=
 
 " Ignore these files when completing
 set wildignore+=*.o,*.obj,.git,*.pyc
-set grepprg=ack-grep          " replace the default grep program with ack
+set wildignore+=eggs/**
+set wildignore+=*.egg-info/**
+
+set grepprg=ack         " replace the default grep program with ack
+
 
 " Set working directory
 nnoremap <leader>. :lcd %:p:h<CR>
 
 " Disable the colorcolumn when switching modes.  Make sure this is the
 " first autocmd for the filetype here
-autocmd FileType * setlocal colorcolumn=0
+"autocmd FileType * setlocal colorcolumn=0
 
 """ Insert completion
 " don't select first item, follow typing in autocomplete
 set completeopt=menuone,longest,preview
 set pumheight=6             " Keep a small completion window
 
-" show a line at column 79
- if exists("&colorcolumn")
-    set colorcolumn=79
-endif
 
 """ Moving Around/Editing
 set cursorline              " have a line indicate the cursor location
@@ -228,17 +236,22 @@ set incsearch               " Incrementally search while typing a /regex
 
 """" Display
 if has("gui_running")
-    colorscheme solarized
+    colorscheme desert
+    " Remove menu bar
+    set guioptions-=m
+
+    " Remove toolbar
+    set guioptions-=T
 else
     colorscheme torte
 endif
 
 " Paste from clipboard
-map <leader>p "+gP
+map <leader>p "+p
 
 " Quit window on <leader>q
 nnoremap <leader>q :q<CR>
-"
+
 " hide matches on <leader>space
 nnoremap <leader><space> :nohlsearch<cr>
 
@@ -246,32 +259,31 @@ nnoremap <leader><space> :nohlsearch<cr>
 nnoremap <leader>S :%s/\s\+$//<cr>:let @/=''<CR>
 
 " Select the item in the list with enter
-"inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 
 " ==========================================================
 " Javascript
 " ==========================================================
 au BufRead *.js set makeprg=jslint\ %
 
-" Don't allow snipmate to take over tab
-autocmd VimEnter * ino <c-j> <c-r>=TriggerSnippet()<cr>
 " Use tab to scroll through autocomplete menus
-autocmd VimEnter * imap <expr> <Tab> pumvisible() ? "<C-N>" : "<Tab>"
-autocmd VimEnter * imap <expr> <S-Tab> pumvisible() ? "<C-P>" : "<S-Tab>"
-snor <c-j> <esc>i<right><c-r>=TriggerSnippet()<cr>
+"autocmd VimEnter * imap <expr> <Tab> pumvisible() ? "<C-N>" : "<Tab>"
+"autocmd VimEnter * imap <expr> <S-Tab> pumvisible() ? "<C-P>" : "<S-Tab>"
+
 let g:acp_completeoptPreview=1
 
 " ===========================================================
 " FileType specific changes
 " ============================================================
 " Mako/HTML
-autocmd BufNewFile,BufRead *.mako,*.mak setlocal ft=html
+autocmd BufNewFile,BufRead *.mako,*.mak,*.jinja2 setlocal ft=html
 autocmd FileType html,xhtml,xml,css setlocal expandtab shiftwidth=2 tabstop=2 softtabstop=2
 
 " Python
 "au BufRead *.py compiler nose
 au FileType python set omnifunc=pythoncomplete#Complete
 au FileType python setlocal expandtab shiftwidth=4 tabstop=8 softtabstop=4 smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class,with
+au FileType coffee setlocal expandtab shiftwidth=4 tabstop=8 softtabstop=4 smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class,with
 au BufRead *.py set efm=%C\ %.%#,%A\ \ File\ \"%f\"\\,\ line\ %l%.%#,%Z%[%^\ ]%\\@=%m
 " Don't let pyflakes use the quickfix window
 let g:pyflakes_use_quickfix = 0
@@ -279,18 +291,22 @@ let g:pyflakes_use_quickfix = 0
 
 
 " Add the virtualenv's site-packages to vim path
+if has('python')
 py << EOF
 import os.path
 import sys
 import vim
-if 'VIRTUALENV' in os.environ:
+if 'VIRTUAL_ENV' in os.environ:
     project_base_dir = os.environ['VIRTUAL_ENV']
     sys.path.insert(0, project_base_dir)
     activate_this = os.path.join(project_base_dir, 'bin/activate_this.py')
     execfile(activate_this, dict(__file__=activate_this))
 EOF
+endif
 
 " Load up virtualenv's vimrc if it exists
 if filereadable($VIRTUAL_ENV . '/.vimrc')
     source $VIRTUAL_ENV/.vimrc
 endif
+
+set colorcolumn=79
